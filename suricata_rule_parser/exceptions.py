@@ -37,7 +37,7 @@ class ValidationError(SuricataRuleParserError):
     """Exception raised when rule validation fails."""
 
     def __init__(
-            self, message: str, rule_sid: int = -1, errors: Optional[List[str]] = None
+        self, message: str, rule_sid: int = -1, errors: Optional[List[str]] = None
     ) -> None:
         """
         Initialize ValidationError.
