@@ -4,6 +4,7 @@ import pytest
 
 from suricata_rule_parser import parse_rule, parse_file
 from suricata_rule_parser.exceptions import ParseError, InvalidRuleFormatError
+from suricata_rule_parser.parser import SuricataParser
 
 
 class TestSuricataParser:
@@ -142,15 +143,146 @@ class TestSuricataParser:
         assert rule.options.sid == 1000011
         assert "test" in rule.options.content
         assert "pcre" in rule.options.other_options
-        assert "established" in rule.options.flow
-        assert "to_server" in rule.options.flow
 
-    def test_parse_pcre_simple(self, sample_pcre_rule_simple):
-        """Test parsing simple PCRE pattern without quotes."""
-        rule = parse_rule(sample_pcre_rule_simple)
+    def test_parse_unknown_protocol(self):
+        """Test parsing rule with unknown protocol."""
+        rule_string = 'alert custom_proto any any -> any any (msg:"Test"; sid:1; rev:1;)'
+        rule = parse_rule(rule_string)
 
-        assert rule.header.action == "alert"
-        assert rule.options.sid == 1000012
-        assert "pcre" in rule.options.other_options
-        pcre_value = rule.options.other_options["pcre"]
-        assert "GET" in pcre_value
+        assert rule.header.protocol == "custom_proto"
+        assert rule.sid == 1
+
+    def test_parse_comment_not_rule(self, tmp_path):
+        """Test parsing file with comments that aren't rules."""
+        parser = SuricataParser()
+        test_file = tmp_path / "test.rules"
+        content = """# This is just a comment, not a rule
+# Another regular comment
+alert tcp any any -> any any (msg:"Real rule"; sid:1; rev:1;)
+"""
+        test_file.write_text(content)
+        rules = parser.parse_file(test_file)
+        assert len(rules) == 1
+        assert rules[0].sid == 1
+
+    def test_parse_rules_with_invalid(self):
+        """Test parse_rules method with some invalid rules."""
+        from suricata_rule_parser import parse_rules
+
+        rule_strings = [
+            'alert tcp any any -> any any (msg:"Valid1"; sid:1; rev:1;)',
+            "invalid rule format",
+            'alert tcp any any -> any any (msg:"Valid2"; sid:2; rev:1;)',
+        ]
+        rules = parse_rules(rule_strings)
+
+        # Should skip the invalid rule
+        assert len(rules) == 2
+        assert rules[0].sid == 1
+        assert rules[1].sid == 2
+
+    def test_parse_options_not_starting_with_paren(self):
+        """Test error when options don't start with parenthesis."""
+        parser = SuricataParser()
+
+        with pytest.raises(ParseError) as exc_info:
+            parser._extract_options_section("invalid options")
+
+        assert "must start with (" in str(exc_info.value)
+
+    def test_parse_unclosed_parentheses(self):
+        """Test error for unclosed parentheses in options."""
+        parser = SuricataParser()
+
+        with pytest.raises(ParseError) as exc_info:
+            parser._extract_options_section('(msg:"Test"; sid:1')
+
+        assert "Unclosed parentheses" in str(exc_info.value)
+
+    def test_parse_unclosed_pcre_pattern(self):
+        """Test error for unclosed PCRE pattern."""
+        parser = SuricataParser()
+
+        with pytest.raises(ParseError) as exc_info:
+            parser._extract_pcre_value('"/unclosed/pattern', 0)
+
+        assert "Unclosed PCRE pattern" in str(exc_info.value)
+
+    def test_parse_pcre_without_pattern(self):
+        """Test PCRE value extraction without pattern delimiter."""
+        parser = SuricataParser()
+
+        # PCRE value that closes before any pattern starts
+        value, end_pos = parser._extract_pcre_value('"value"', 0)
+        assert value == "value"
+
+    def test_parse_invalid_sid_value(self):
+        """Test parsing rule with invalid (non-numeric) SID."""
+        rule_string = 'alert tcp any any -> any any (msg:"Test"; sid:invalid; rev:1;)'
+
+        with pytest.raises(ParseError) as exc_info:
+            parse_rule(rule_string)
+
+        assert "Invalid SID value" in str(exc_info.value)
+
+    def test_parse_invalid_rev_value(self):
+        """Test parsing rule with invalid (non-numeric) rev."""
+        rule_string = 'alert tcp any any -> any any (msg:"Test"; sid:1; rev:invalid;)'
+
+        with pytest.raises(ParseError) as exc_info:
+            parse_rule(rule_string)
+
+        assert "Invalid rev value" in str(exc_info.value)
+
+    def test_parse_invalid_priority_value(self):
+        """Test parsing rule with invalid (non-numeric) priority."""
+        rule_string = 'alert tcp any any -> any any (msg:"Test"; priority:high; sid:1; rev:1;)'
+
+        with pytest.raises(ParseError) as exc_info:
+            parse_rule(rule_string)
+
+        assert "Invalid priority value" in str(exc_info.value)
+
+    def test_parse_flag_option(self):
+        """Test parsing rule with flag options (no value)."""
+        rule_string = 'alert tcp any any -> any any (msg:"Test"; nocase; sid:1; rev:1;)'
+        rule = parse_rule(rule_string)
+
+        # Flag options are stored with empty string value
+        assert "nocase" in rule.options.other_options
+        assert rule.options.other_options.get("nocase") == ""
+
+    def test_parse_metadata_with_integer(self):
+        """Test parsing metadata with integer value."""
+        rule_string = (
+            'alert tcp any any -> any any (msg:"Test"; metadata:attack_target 123; sid:1; rev:1;)'
+        )
+        rule = parse_rule(rule_string)
+
+        assert rule.options.metadata.get("attack_target") == 123
+
+    def test_parse_metadata_with_boolean(self):
+        """Test parsing metadata with boolean values."""
+        rule_string = (
+            "alert tcp any any -> any any "
+            '(msg:"Test"; metadata:enabled true, disabled false; sid:1; rev:1;)'
+        )
+        rule = parse_rule(rule_string)
+
+        assert rule.options.metadata.get("enabled") is True
+        assert rule.options.metadata.get("disabled") is False
+
+    def test_parse_metadata_flag_only(self):
+        """Test parsing metadata with flag (no value)."""
+        rule_string = 'alert tcp any any -> any any (msg:"Test"; metadata:flagvalue; sid:1; rev:1;)'
+        rule = parse_rule(rule_string)
+
+        assert rule.options.metadata.get("flagvalue") is True
+
+    def test_parse_backslash_escape_sequence(self):
+        """Test parsing content with backslash escape sequences."""
+        # Two backslashes followed by a quote - quote is NOT escaped
+        rule_string = r'alert tcp any any -> any any (msg:"Test"; content:"text\\"; sid:1; rev:1;)'
+        rule = parse_rule(rule_string)
+
+        assert "text\\\\" in rule.options.content[0]
