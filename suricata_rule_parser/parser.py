@@ -35,14 +35,14 @@ class SuricataParser:
 
     # Regex for matching individual options
     OPTION_PATTERN = re.compile(
-        r'(\w+(?:\.\w+)?)'  # Option key (supports dot notation like dns.query)
-        r'(?:\s*:\s*'  # Optional colon and value
-        r'(?:'
+        r"(\w+(?:\.\w+)?)"  # Option key (supports dot notation like dns.query)
+        r"(?:\s*:\s*"  # Optional colon and value
+        r"(?:"
         r'"([^"]*(?:\\.[^"]*)*)"|'  # Quoted string with escaped quotes
         r"'([^']*(?:\\.[^']*)*)\'|"  # Single-quoted string
-        r'([^;]+?)'  # Unquoted value
-        r'))?'
-        r'\s*;'  # Semicolon
+        r"([^;]+?)"  # Unquoted value
+        r"))?"
+        r"\s*;"  # Semicolon
     )
 
     def __init__(self) -> None:
@@ -216,7 +216,7 @@ class SuricataParser:
         """
         count = 0
         i = pos - 1
-        while i >= 0 and text[i] == '\\':
+        while i >= 0 and text[i] == "\\":
             count += 1
             i -= 1
         return count
@@ -253,15 +253,16 @@ class SuricataParser:
                 is_escaped = (num_backslashes % 2) == 1
 
                 if not is_escaped and not in_quotes:
-                    # Only treat as opening quote if immediately preceded by colon (with optional whitespace)
-                    # This prevents apostrophes in URLs (like "fin8's") from being treated as quotes
+                    # Only treat as opening quote if immediately preceded by colon
+                    # (with optional whitespace). This prevents apostrophes in URLs
+                    # (like "fin8's") from being treated as quotes
                     segment_before = text[last_semicolon:i]
                     # Check if quote immediately follows colon: "key:" or "key: "
-                    immediately_after_colon = re.search(r':\s*$', segment_before)
+                    immediately_after_colon = re.search(r":\s*$", segment_before)
 
                     if immediately_after_colon:
                         # Check if this is a PCRE pattern by looking backwards
-                        if re.search(r'pcre\s*:\s*$', segment_before):
+                        if re.search(r"pcre\s*:\s*$", segment_before):
                             # This is a PCRE pattern - use special extraction
                             try:
                                 pcre_value, end_pos = self._extract_pcre_value(text, i)
@@ -322,7 +323,6 @@ class SuricataParser:
         """
         i = start_pos + 1  # Start after opening quote
         in_pattern = False
-        pattern_start = -1
         escaped = False
 
         while i < len(text):
@@ -334,29 +334,28 @@ class SuricataParser:
                 i += 1
                 continue
 
-            if char == '\\':
+            if char == "\\":
                 # Mark next character as escaped
                 escaped = True
                 i += 1
                 continue
 
             # Look for the opening / of the PCRE pattern
-            if not in_pattern and char == '/':
+            if not in_pattern and char == "/":
                 in_pattern = True
-                pattern_start = i
                 i += 1
                 continue
 
             # Look for the closing / of the PCRE pattern
-            if in_pattern and char == '/':
+            if in_pattern and char == "/":
                 # Skip past any flags (i, s, m, R, U, x, A, D, P, S, X, J, etc.)
                 i += 1
-                while i < len(text) and text[i] in 'ismRUxADPSXJbuLpyPQYlwZQOIB':
+                while i < len(text) and text[i] in "ismRUxADPSXJbuLpyPQYlwZQOIB":
                     i += 1
 
                 # Next character should be the closing quote
                 if i < len(text) and text[i] == '"':
-                    return text[start_pos + 1:i], i
+                    return text[start_pos + 1 : i], i
 
                 # If not a quote, this wasn't the end of the pattern
                 # Continue looking (edge case: / inside pattern)
@@ -365,7 +364,7 @@ class SuricataParser:
 
             # If we find a closing quote before any pattern, return it
             if not in_pattern and char == '"':
-                return text[start_pos + 1:i], i
+                return text[start_pos + 1 : i], i
 
             i += 1
 

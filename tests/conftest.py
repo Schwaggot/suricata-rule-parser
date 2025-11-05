@@ -14,14 +14,14 @@ def sample_alert_rule():
 def sample_http_rule():
     """HTTP rule with content matching."""
     return (
-        'alert http any any -> any any '
+        "alert http any any -> any any "
         '(msg:"ET WEB_SERVER Suspicious User-Agent sqlmap"; '
-        'flow:to_server,established; '
+        "flow:to_server,established; "
         'content:"User-Agent|3a 20|sqlmap"; http_header; '
-        'classtype:web-application-attack; '
-        'priority:1; '
-        'sid:2000008; '
-        'rev:2;)'
+        "classtype:web-application-attack; "
+        "priority:1; "
+        "sid:2000008; "
+        "rev:2;)"
     )
 
 
@@ -29,18 +29,18 @@ def sample_http_rule():
 def sample_dns_rule():
     """DNS rule with metadata."""
     return (
-        'alert dns $HOME_NET any -> any any '
+        "alert dns $HOME_NET any -> any any "
         '(msg:"ET DNS Query for .su TLD (Soviet Union) Often Malware Related"; '
-        'dns.query; '
+        "dns.query; "
         'content:".su"; '
-        'nocase; '
-        'endswith; '
-        'reference:url,www.abuse.ch/?p=3581; '
-        'classtype:bad-unknown; '
-        'sid:2014169; '
-        'rev:4; '
-        'metadata:created_at 2012_01_31, confidence Medium, '
-        'signature_severity Major, updated_at 2020_09_14;)'
+        "nocase; "
+        "endswith; "
+        "reference:url,www.abuse.ch/?p=3581; "
+        "classtype:bad-unknown; "
+        "sid:2014169; "
+        "rev:4; "
+        "metadata:created_at 2012_01_31, confidence Medium, "
+        "signature_severity Major, updated_at 2020_09_14;)"
     )
 
 
@@ -54,16 +54,16 @@ def sample_disabled_rule():
 def sample_complex_rule():
     """Complex rule with multiple content matches."""
     return (
-        'alert tcp $HOME_NET any -> $EXTERNAL_NET 1024: '
+        "alert tcp $HOME_NET any -> $EXTERNAL_NET 1024: "
         '(msg:"ET MALWARE Backdoor.Win32.VB.brg C&C Checkin"; '
-        'flow:established,to_server; '
+        "flow:established,to_server; "
         'content:"Status|2a 28|Idle|2e 2e 2e 29 2a|"; '
-        'depth:17; '
-        'offset:0; '
-        'classtype:command-and-control; '
-        'sid:2007922; '
-        'rev:5; '
-        'metadata:created_at 2010_07_30, signature_severity Major, updated_at 2019_07_26;)'
+        "depth:17; "
+        "offset:0; "
+        "classtype:command-and-control; "
+        "sid:2007922; "
+        "rev:5; "
+        "metadata:created_at 2010_07_30, signature_severity Major, updated_at 2019_07_26;)"
     )
 
 
@@ -107,11 +107,11 @@ def example_rules_dir():
 def sample_pcre_rule_with_quotes():
     """Rule with PCRE pattern containing quotes in character class."""
     return (
-        r'alert tcp any any -> any any '
+        r"alert tcp any any -> any any "
         r'(msg:"PCRE with quotes in character class"; '
         r'pcre:"/^[\"\']\s*:\s*[\"\']\s*/Ri"; '
-        r'sid:1000010; '
-        r'rev:1;)'
+        r"sid:1000010; "
+        r"rev:1;)"
     )
 
 
@@ -119,13 +119,13 @@ def sample_pcre_rule_with_quotes():
 def sample_pcre_rule_complex():
     """Complex PCRE rule with multiple patterns."""
     return (
-        r'alert http any any -> any any '
+        r"alert http any any -> any any "
         r'(msg:"Complex PCRE pattern"; '
         r'content:"test"; '
         r'pcre:"/[a-z0-9][\"\']/i"; '
-        r'flow:established,to_server; '
-        r'sid:1000011; '
-        r'rev:1;)'
+        r"flow:established,to_server; "
+        r"sid:1000011; "
+        r"rev:1;)"
     )
 
 
@@ -133,9 +133,9 @@ def sample_pcre_rule_complex():
 def sample_pcre_rule_simple():
     """Simple PCRE rule without quotes in pattern."""
     return (
-        r'alert tcp any any -> any 80 '
+        r"alert tcp any any -> any 80 "
         r'(msg:"Simple PCRE pattern"; '
         r'pcre:"/GET\s+\\/[a-z]+/i"; '
-        r'sid:1000012; '
-        r'rev:1;)'
+        r"sid:1000012; "
+        r"rev:1;)"
     )

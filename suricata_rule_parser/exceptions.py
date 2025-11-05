@@ -1,5 +1,7 @@
 """Custom exceptions for Suricata rule parser."""
 
+from typing import List, Optional
+
 
 class SuricataRuleParserError(Exception):
     """Base exception for all parser errors."""
@@ -34,7 +36,9 @@ class ParseError(SuricataRuleParserError):
 class ValidationError(SuricataRuleParserError):
     """Exception raised when rule validation fails."""
 
-    def __init__(self, message: str, rule_sid: int = -1, errors: list = None) -> None:
+    def __init__(
+            self, message: str, rule_sid: int = -1, errors: Optional[List[str]] = None
+    ) -> None:
         """
         Initialize ValidationError.
 

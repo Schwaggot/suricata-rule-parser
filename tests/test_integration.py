@@ -44,8 +44,11 @@ class TestIntegration:
             pytest.skip("Example rules directory not found")
 
         # Try to find a large ruleset
-        et_files = list((example_rules_dir / "et-open").glob("*.rules")) if (
-                example_rules_dir / "et-open").exists() else []
+        et_files = (
+            list((example_rules_dir / "et-open").glob("*.rules"))
+            if (example_rules_dir / "et-open").exists()
+            else []
+        )
 
         if not et_files:
             pytest.skip("No large rulesets found")
@@ -79,6 +82,7 @@ class TestIntegration:
 
             # Parse the serialized rule
             from suricata_rule_parser import parse_rule
+
             reparsed = parse_rule(serialized)
 
             # Compare key fields

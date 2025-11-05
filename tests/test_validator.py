@@ -137,10 +137,7 @@ class TestSuricataValidator:
             dest_port="80",
         )
         options = RuleOptions(
-            msg="Test",
-            sid=1000,
-            rev=1,
-            flow=["to_server", "to_client"]  # Conflicting
+            msg="Test", sid=1000, rev=1, flow=["to_server", "to_client"]  # Conflicting
         )
         rule = SuricataRule(header=header, options=options)
 

@@ -4,12 +4,11 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 from .__version__ import __version__
-from .exceptions import ParseError, ValidationError
+from .exceptions import ParseError
 from .parser import SuricataParser
-from .serializer import SuricataSerializer
 from .validator import SuricataValidator
 
 
@@ -36,9 +35,11 @@ def parse_command(args: argparse.Namespace) -> int:
                 print(f"SID {rule.sid}: {rule.msg}")
                 print(f"  Action: {rule.action}")
                 print(f"  Protocol: {rule.protocol}")
-                print(f"  {rule.header.source_ip}:{rule.header.source_port} "
-                      f"{rule.header.direction} "
-                      f"{rule.header.dest_ip}:{rule.header.dest_port}")
+                print(
+                    f"  {rule.header.source_ip}:{rule.header.source_port} "
+                    f"{rule.header.direction} "
+                    f"{rule.header.dest_ip}:{rule.header.dest_port}"
+                )
                 if rule.classtype:
                     print(f"  Classtype: {rule.classtype}")
                 print()
@@ -61,6 +62,7 @@ def parse_command(args: argparse.Namespace) -> int:
         print(f"Unexpected error: {e}", file=sys.stderr)
         if args.verbose:
             import traceback
+
             traceback.print_exc()
         return 1
 
@@ -117,6 +119,7 @@ def validate_command(args: argparse.Namespace) -> int:
         print(f"Unexpected error: {e}", file=sys.stderr)
         if args.verbose:
             import traceback
+
             traceback.print_exc()
         return 1
 
@@ -142,17 +145,17 @@ def info_command(args: argparse.Namespace) -> int:
         disabled_rules = total_rules - enabled_rules
 
         # Count by action
-        actions = {}
+        actions: Dict[str, int] = {}
         for rule in rules:
             actions[rule.action] = actions.get(rule.action, 0) + 1
 
         # Count by protocol
-        protocols = {}
+        protocols: Dict[str, int] = {}
         for rule in rules:
             protocols[rule.protocol] = protocols.get(rule.protocol, 0) + 1
 
         # Count by classtype
-        classtypes = {}
+        classtypes: Dict[str, int] = {}
         for rule in rules:
             if rule.classtype:
                 classtypes[rule.classtype] = classtypes.get(rule.classtype, 0) + 1
@@ -165,19 +168,21 @@ def info_command(args: argparse.Namespace) -> int:
         print(f"  Enabled: {enabled_rules}")
         print(f"  Disabled: {disabled_rules}")
 
-        print(f"\nActions:")
+        print("\nActions:")
         for action, count in sorted(actions.items(), key=lambda x: x[1], reverse=True):
             print(f"  {action}: {count}")
 
-        print(f"\nProtocols:")
+        print("\nProtocols:")
         for protocol, count in sorted(protocols.items(), key=lambda x: x[1], reverse=True)[:10]:
             print(f"  {protocol}: {count}")
         if len(protocols) > 10:
             print(f"  ... and {len(protocols) - 10} more")
 
         if classtypes:
-            print(f"\nTop Classtypes:")
-            for classtype, count in sorted(classtypes.items(), key=lambda x: x[1], reverse=True)[:10]:
+            print("\nTop Classtypes:")
+            for classtype, count in sorted(classtypes.items(), key=lambda x: x[1], reverse=True)[
+                :10
+            ]:
                 print(f"  {classtype}: {count}")
 
         print(f"\n{'=' * 60}")
@@ -194,6 +199,7 @@ def info_command(args: argparse.Namespace) -> int:
         print(f"Unexpected error: {e}", file=sys.stderr)
         if args.verbose:
             import traceback
+
             traceback.print_exc()
         return 1
 
@@ -225,7 +231,8 @@ def main() -> int:
         help="Output format (default: compact)",
     )
     parse_parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose output",
     )
@@ -242,7 +249,8 @@ def main() -> int:
         help="Apply strict validation rules",
     )
     validate_parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose output",
     )
@@ -254,7 +262,8 @@ def main() -> int:
     )
     info_parser.add_argument("file", type=Path, help="Path to rules file")
     info_parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose output",
     )

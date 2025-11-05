@@ -3,8 +3,8 @@
 import re
 from typing import List, Tuple
 
-from .constants import ACTIONS, DIRECTIONS, FLOW_STATES, PROTOCOLS, REQUIRED_OPTIONS
-from .exceptions import MissingRequiredOptionError, ValidationError
+from .constants import ACTIONS, DIRECTIONS, FLOW_STATES, PROTOCOLS
+from .exceptions import ValidationError
 from .models import SuricataRule
 
 
@@ -162,22 +162,14 @@ class SuricataValidator:
 
         # HTTP-specific checks
         if protocol == "http":
-            http_keywords = [
-                k for k in rule.options.other_options.keys()
-                if k.startswith("http")
-            ]
+            http_keywords = [k for k in rule.options.other_options.keys() if k.startswith("http")]
             if not http_keywords and not rule.options.content:
                 if self.strict:
-                    errors.append(
-                        "HTTP rule should have HTTP-specific keywords or content"
-                    )
+                    errors.append("HTTP rule should have HTTP-specific keywords or content")
 
         # DNS-specific checks
         elif protocol == "dns":
-            dns_keywords = [
-                k for k in rule.options.other_options.keys()
-                if k.startswith("dns")
-            ]
+            dns_keywords = [k for k in rule.options.other_options.keys() if k.startswith("dns")]
             if not dns_keywords:
                 if self.strict:
                     errors.append("DNS rule should have DNS-specific keywords")

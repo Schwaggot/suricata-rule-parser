@@ -3,7 +3,7 @@
 from typing import Any, Dict, List
 
 from .exceptions import SerializationError
-from .models import SuricataRule
+from .models import RuleOptions, SuricataRule
 
 
 class SuricataSerializer:
@@ -72,7 +72,7 @@ class SuricataSerializer:
             f"{h.dest_ip} {h.dest_port}"
         )
 
-    def _serialize_options(self, options) -> str:
+    def _serialize_options(self, options: RuleOptions) -> str:
         """
         Serialize rule options.
 
